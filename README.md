@@ -12,9 +12,11 @@ AI-driven interaction is not used in the blocking smoke. An AI classifier could 
 
 ### A/B resilience
 
-`QuizStepDriver` is scoped to the currently visible `[data-step-name]` and acts on capabilities rather than a Page Object per quiz screen. Each loop iteration performs at most one click. That matters for answer cards that auto-advance: after a click, the flow returns to observation instead of blindly clicking a CTA from stale assumptions.
+`QuizStepSection` is scoped to the currently visible `[data-step-name]` and exposes capabilities rather than modeling every quiz screen as a Page Object. `QuizSteps` owns the resilient flow loop, while `RegistrationSteps` and `BookingSteps` describe only genuinely special business interactions. Each loop iteration performs at most one click. That matters for answer cards that auto-advance: after a click, the flow returns to observation instead of blindly clicking a CTA from stale assumptions.
 
-The driver has explicit form, multi-select, progress, modal, single-choice, and booking primitives. Unknown primitives fail with the URL and scoped HTML rather than falling back to an arbitrary visible button. The owner modal is handled before the underlying step. Hobby selections are remembered so the same pill is not toggled off. Booking chooses the first enabled `HH:mm` slot only when needed and books on a later iteration.
+The page/section layer has explicit form, multi-select, progress, modal, single-choice, and booking capabilities. Unknown primitives fail with the URL and scoped HTML rather than falling back to an arbitrary visible button. The owner modal is handled before the underlying step. Hobby selections are remembered so the same pill is not toggled off. Booking chooses the first enabled `HH:mm` slot only when needed and books on a later iteration.
+
+The architecture is JDI-Light-inspired without using JDI Light: `BaseUiTest` owns lifecycle and diagnostics, pages represent stable product surfaces, sections encapsulate Playwright locators, steps express the journey, and the verification layer owns the stateful product oracle. Playwright remains the only browser engine and the test itself stays intentionally thin.
 
 ### Business oracle
 

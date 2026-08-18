@@ -1,5 +1,6 @@
-package com.charlie.quiz;
+package com.charlie.listeners;
 
+import com.charlie.common.TestData;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Response;
 import java.io.IOException;
@@ -11,16 +12,23 @@ import java.util.Deque;
 import java.util.Locale;
 import java.util.Set;
 
-final class NetworkEvidenceCollector {
+public final class NetworkEvidenceCollector {
   private static final int MAX_ENTRIES = 80;
   private static final Set<String> INTERESTING_TYPES = Set.of("xhr", "fetch");
 
   private final Deque<String> evidence = new ArrayDeque<>();
-  private final TestUser user;
+  private TestData user;
 
-  NetworkEvidenceCollector(Page page, TestUser user) {
-    this.user = user;
+  public NetworkEvidenceCollector(Page page) {
     page.onResponse(this::record);
+  }
+
+  public void redact(TestData user) {
+    this.user = user;
+  }
+
+  public synchronized void writeTo(Path file) throws IOException {
+    Files.writeString(file, String.join(System.lineSeparator(), evidence), StandardCharsets.UTF_8);
   }
 
   private synchronized void record(Response response) {
@@ -39,12 +47,12 @@ final class NetworkEvidenceCollector {
     evidence.addLast(line);
   }
 
-  synchronized void writeTo(Path file) throws IOException {
-    Files.writeString(file, String.join(System.lineSeparator(), evidence), StandardCharsets.UTF_8);
-  }
-
   private String redact(String text) {
-    String redacted = text.replace(user.email(), "[REDACTED_EMAIL]").replace(user.phone(), "[REDACTED_PHONE]");
+    String redacted = text;
+    if (user != null) {
+      redacted = redacted.replace(user.email(), "[REDACTED_EMAIL]")
+          .replace(user.phone(), "[REDACTED_PHONE]");
+    }
     redacted = redacted.replaceAll("(?i)(email=)[^&]+", "$1[REDACTED]");
     return redacted.replaceAll("(?i)((?:phone|tel)=)[^&]+", "$1[REDACTED]");
   }
