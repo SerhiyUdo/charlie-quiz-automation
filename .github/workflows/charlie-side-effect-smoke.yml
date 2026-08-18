@@ -1,0 +1,52 @@
+name: Charlie side-effect smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_side_effect_e2e:
+        description: "Create a real stage account and booking"
+        required: true
+        type: boolean
+        default: false
+  schedule:
+    - cron: "17 */6 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: charlie-stage-side-effect-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    if: github.event_name == 'schedule' || inputs.run_side_effect_e2e == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      RUN_SIDE_EFFECT_E2E: "true"
+      CHARLIE_CHILD_AGE: "7"
+      CHARLIE_PHONE: ${{ secrets.CHARLIE_PHONE }}
+      CHARLIE_EMAIL_DOMAIN: ${{ vars.CHARLIE_EMAIL_DOMAIN }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.14"
+      - name: Install Chromium
+        run: gradle playwrightInstall
+      - name: Run destructive stage smoke
+        run: gradle test
+      - name: Upload failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: charlie-smoke-evidence
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
