@@ -50,6 +50,13 @@ public final class QuizStepSection {
         && enabledButtons(step).count() >= 2;
   }
 
+  public boolean hasEnabledProgressControl() {
+    Locator progressControl = findSubmit(activeStep());
+    return progressControl.count() > 0
+        && progressControl.first().isVisible()
+        && progressControl.first().isEnabled();
+  }
+
   public void chooseGenericOption() {
     Locator step = activeStep();
     Locator buttons = enabledButtons(step);
@@ -65,7 +72,7 @@ public final class QuizStepSection {
 
   public void continueProgress() {
     Locator submit = findSubmit(activeStep());
-    if (submit.count() == 0 || !submit.first().isEnabled()) {
+    if (submit.count() == 0 || !submit.first().isVisible() || !submit.first().isEnabled()) {
       throw unsupported("Progress screen has no enabled scoped CTA");
     }
     submit.first().click();
