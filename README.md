@@ -28,13 +28,13 @@ A real stage run exposed a previously unseen informational `age-range-info` vari
 
 ### Business oracle
 
-The booking signal is the simultaneous visibility of `data-step-name="telegram-bot"` and `[data-test-lesson-date]`. The account signal is the same browser session reaching `/app/dashboard`. The verifier remembers the booking signal after navigation.
+Booking requires an observed booking-specific UI signal: either simultaneous visibility of `data-step-name="telegram-bot"` and `[data-test-lesson-date]`, or the observed login-page confirmation that the lesson request was sent. The account signal includes the same browser session reaching `/app/dashboard`. The verifier remembers booking evidence across later navigation; the dashboard URL alone is never treated as proof of booking.
 
 This is a product-level UI oracle because the assignment exposes no supported backend lookup. A read-only backend or system-of-record query would be stronger for independently verifying the persisted account and booking, and should replace or supplement these signals if the product team provides one. No undocumented API is invented here.
 
 ### CI/CD strategy
 
-The GitHub Actions workflow uses Java 21 and Gradle 8.14, installs Playwright Chromium, supports explicit manual dispatch, and runs every six hours. The destructive job is serialized to reduce collisions. Failure evidence is retained for seven days. The test itself still requires `RUN_SIDE_EFFECT_E2E=true`, so a plain local or CI `gradle test` safely skips it.
+The GitHub Actions workflow uses Java 21 and Gradle 8.14, installs Playwright Chromium, and runs only through explicit manual dispatch with destructive opt-in. There is no scheduled trigger, so CI does not automatically create stage accounts or bookings. The destructive job is serialized to reduce collisions, and failure evidence is retained for seven days. The test itself still requires `RUN_SIDE_EFFECT_E2E=true`, so a plain local or CI `gradle test` safely skips it.
 
 ### Risks and limitations
 
@@ -63,17 +63,25 @@ Prerequisites: JDK 21. The Gradle wrapper is committed.
 
 The command above is safe and reports the smoke as skipped. Install Chromium and explicitly opt in to real stage writes:
 
+Install Chromium once if needed:
+
 ```bash
 ./gradlew playwrightInstall
-RUN_SIDE_EFFECT_E2E=true ./gradlew test
 ```
 
-On PowerShell:
+Run the destructive smoke explicitly.
+
+PowerShell:
 
 ```powershell
-./gradlew.bat playwrightInstall
 $env:RUN_SIDE_EFFECT_E2E = "true"
-./gradlew.bat test
+./gradlew.bat test --tests "com.charlie.tests.QuizBusinessOutcomeTest"
+```
+
+Bash:
+
+```bash
+RUN_SIDE_EFFECT_E2E=true ./gradlew test --tests "com.charlie.tests.QuizBusinessOutcomeTest"
 ```
 
 Configuration:

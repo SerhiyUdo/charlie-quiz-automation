@@ -31,7 +31,6 @@ public final class UiBusinessOutcomeVerifier implements BusinessOutcomeVerifier 
 
         bookingObserved |=
                 bookingConfirmation
-                        || dashboardOpen
                         || loginConfirmation;
 
         accountObserved |=

@@ -8,8 +8,6 @@ on:
         required: true
         type: boolean
         default: false
-  schedule:
-    - cron: "17 */6 * * *"
 
 permissions:
   contents: read
@@ -20,7 +18,7 @@ concurrency:
 
 jobs:
   smoke:
-    if: github.event_name == 'schedule' || inputs.run_side_effect_e2e == true
+    if: inputs.run_side_effect_e2e == true
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -41,7 +39,7 @@ jobs:
       - name: Install Chromium
         run: gradle playwrightInstall
       - name: Run destructive stage smoke
-        run: gradle test
+        run: gradle test --tests "com.charlie.tests.QuizBusinessOutcomeTest"
       - name: Upload failure evidence
         if: failure()
         uses: actions/upload-artifact@v4
