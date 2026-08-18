@@ -2,9 +2,13 @@
 
 A deliberately small, product-level smoke for the A/B-tested Charlie registration quiz. It uses Java 21, Playwright for Java, TestNG, and Gradle 8.14. The smoke proves, in one browser session, that an account reaches the authenticated dashboard and that a trial lesson booking was visibly confirmed.
 
-## Part A — written approach
+## Part A — Manual testing approach
 
-### Test strategy
+The detailed manual test strategy, including functional coverage, A/B testing, negative scenarios, security/abuse checks, prioritization, test data strategy, and exit criteria, is documented in [MANUAL_TEST_APPROACH.md](MANUAL_TEST_APPROACH.md).
+
+## Part B — Automation implementation
+
+### Automation strategy
 
 The deterministic core is intentionally narrow: the starting URL, age (default `7`), generated user data, supported interaction capabilities, and two business-outcome signals. The driver does not freeze screen count, order, copy, dates, or times. Generic single-choice screens intentionally accept any valid enabled answer because the route through the funnel is not the subject of this smoke.
 
@@ -15,6 +19,8 @@ AI-driven interaction is not used in the blocking smoke. An AI classifier could 
 `QuizStepSection` is scoped to the currently visible `[data-step-name]` and exposes capabilities rather than modeling every quiz screen as a Page Object. `QuizSteps` owns the resilient flow loop, while `RegistrationSteps` and `BookingSteps` describe only genuinely special business interactions. Each loop iteration performs at most one click. That matters for answer cards that auto-advance: after a click, the flow returns to observation instead of blindly clicking a CTA from stale assumptions.
 
 The page/section layer has explicit form, multi-select, progress, modal, single-choice, and booking capabilities. Unknown primitives fail with the URL and scoped HTML rather than falling back to an arbitrary visible button. The owner modal is handled before the underlying step. Hobby selections are remembered so the same pill is not toggled off. Booking chooses the first enabled `HH:mm` slot only when needed and books on a later iteration.
+
+### Architecture
 
 The architecture is JDI-Light-inspired without using JDI Light: `BaseUiTest` owns lifecycle and diagnostics, pages represent stable product surfaces, sections encapsulate Playwright locators, steps express the journey, and the verification layer owns the stateful product oracle. Playwright remains the only browser engine and the test itself stays intentionally thin.
 
@@ -34,12 +40,10 @@ The GitHub Actions workflow uses Java 21 and Gradle 8.14, installs Playwright Ch
 
 - The smoke creates real stage accounts and bookings; stage needs a cleanup/TTL policy.
 - A UI success screen can disagree with persistence, hence the recommendation for a supported read-only oracle.
-- The default example-domain email or phone may be rejected by a future validation rule; both are configurable.
+- The generated email domain or Albanian phone format may be rejected by a future validation rule; both are configurable.
 - A materially new interaction primitive correctly fails until its contract is reviewed and added.
 - Localization can change semantic modal/CTA labels. Stable test hooks for primitive type and actions would further reduce copy coupling.
 - Stage availability, phone policy, capacity, and rate limiting can cause non-product failures.
-
-## Part B — implementation notes
 
 ### Why Option 1
 
@@ -61,7 +65,7 @@ The command above is safe and reports the smoke as skipped. Install Chromium and
 
 ```bash
 ./gradlew playwrightInstall
-RUN_SIDE_EFFECT_E2E=true CHARLIE_PHONE=+380501234567 ./gradlew test
+RUN_SIDE_EFFECT_E2E=true ./gradlew test
 ```
 
 On PowerShell:
@@ -69,7 +73,6 @@ On PowerShell:
 ```powershell
 ./gradlew.bat playwrightInstall
 $env:RUN_SIDE_EFFECT_E2E = "true"
-$env:CHARLIE_PHONE = "+380501234567"
 ./gradlew.bat test
 ```
 
@@ -80,8 +83,8 @@ Configuration:
 | `RUN_SIDE_EFFECT_E2E` | `false` | Mandatory destructive-test opt-in |
 | `CHARLIE_QUIZ_URL` | stage URL | Override target URL |
 | `CHARLIE_CHILD_AGE` | `7` | Deterministic age choice |
-| `CHARLIE_PHONE` | `+380501234567` | Registration phone |
-| `CHARLIE_EMAIL_DOMAIN` | `example.com` | Domain for unique generated email |
+| `CHARLIE_PHONE` | generated `+35569…` number | Override registration phone |
+| `CHARLIE_EMAIL_DOMAIN` | `gmail.com` | Domain for unique generated email |
 | `CHARLIE_FLOW_TIMEOUT_SECONDS` | `300` | End-to-end timeout |
 | `CHARLIE_HEADED` | `false` | Show browser locally |
 
@@ -92,8 +95,8 @@ Failures write a screenshot, current URL, current step name, shortened active-st
 - `[data-step-name]` remains the stable screen boundary.
 - `[data-test-lesson-date]` remains the stable booking confirmation hook.
 - The dashboard redirect occurs in the registration browser session.
-- Stage accepts plus-addressed unique emails for the configured domain.
-- The supplied phone is safe and valid for test use.
+- Stage accepts unique generated emails for the configured domain.
+- The supplied or generated Albanian phone is safe and valid for test use.
 
 ### With more time
 
