@@ -7,13 +7,8 @@ import com.charlie.pages.QuizPage;
 import com.charlie.verification.BusinessOutcomeVerifier;
 import java.text.MessageFormat;
 import java.time.Duration;
-import java.util.Set;
 
 public final class QuizSteps {
-  private static final Set<String> PROGRESS_ONLY = Set.of(
-      "control-schedule", "child-device-advice", "speaking-clubs-info", "repeat-material",
-      "telegram-bot");
-
   private final QuizPage quizPage;
   private final RegistrationSteps registrationSteps;
   private final BookingSteps bookingSteps;
@@ -91,10 +86,10 @@ public final class QuizSteps {
   }
 
   private void advanceGenericStep(String stepName) {
-    if (PROGRESS_ONLY.contains(stepName)) {
-      quizPage.currentStep().continueProgress();
-    } else if (quizPage.currentStep().isGenericChoice()) {
+    if (quizPage.currentStep().isGenericChoice()) {
       quizPage.currentStep().chooseGenericOption();
+    } else if (quizPage.currentStep().hasEnabledProgressControl()) {
+      quizPage.currentStep().continueProgress();
     } else {
       throw quizPage.currentStep().unsupported(
           MessageFormat.format("Unknown interaction primitive for step ''{0}''", stepName));

@@ -18,6 +18,8 @@ The page/section layer has explicit form, multi-select, progress, modal, single-
 
 The architecture is JDI-Light-inspired without using JDI Light: `BaseUiTest` owns lifecycle and diagnostics, pages represent stable product surfaces, sections encapsulate Playwright locators, steps express the journey, and the verification layer owns the stateful product oracle. Playwright remains the only browser engine and the test itself stays intentionally thin.
 
+A real stage run exposed a previously unseen informational `age-range-info` variant. Because progress screens are recognized by an enabled scoped progress control rather than a step-name whitelist, variants like this can flow through without adding screen-specific code.
+
 ### Business oracle
 
 The booking signal is the simultaneous visibility of `data-step-name="telegram-bot"` and `[data-test-lesson-date]`. The account signal is the same browser session reaching `/app/dashboard`. The verifier remembers the booking signal after navigation.
