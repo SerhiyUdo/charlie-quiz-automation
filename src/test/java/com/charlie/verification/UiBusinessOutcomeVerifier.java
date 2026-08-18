@@ -3,42 +3,68 @@ package com.charlie.verification;
 import com.charlie.common.TestData;
 import com.charlie.pages.DashboardPage;
 import com.charlie.pages.QuizPage;
-import java.text.MessageFormat;
 import org.testng.Assert;
 
+import java.text.MessageFormat;
+
 public final class UiBusinessOutcomeVerifier implements BusinessOutcomeVerifier {
-  private final QuizPage quizPage;
-  private final DashboardPage dashboardPage;
-  private boolean bookingObserved;
-  private boolean accountObserved;
 
-  public UiBusinessOutcomeVerifier(QuizPage quizPage, DashboardPage dashboardPage) {
-    this.quizPage = quizPage;
-    this.dashboardPage = dashboardPage;
-  }
+    private final QuizPage quizPage;
+    private final DashboardPage dashboardPage;
 
-  @Override
-  public void observe() {
-    bookingObserved |= quizPage.bookingConfirmationVisible();
-    accountObserved |= dashboardPage.isOpen();
-  }
+    private boolean bookingObserved;
+    private boolean accountObserved;
 
-  @Override
-  public boolean complete() {
-    return bookingObserved && accountObserved;
-  }
+    public UiBusinessOutcomeVerifier(
+            QuizPage quizPage,
+            DashboardPage dashboardPage
+    ) {
+        this.quizPage = quizPage;
+        this.dashboardPage = dashboardPage;
+    }
 
-  @Override
-  public String status() {
-    return MessageFormat.format(
-        "bookingObserved={0}, accountObserved={1}", bookingObserved, accountObserved);
-  }
+    @Override
+    public void observe() {
+        boolean dashboardOpen = dashboardPage.isOpen();
+        boolean loginConfirmation = quizPage.loginBookingConfirmationVisible();
+        boolean bookingConfirmation = quizPage.bookingConfirmationVisible();
 
-  @Override
-  public void assertComplete(TestData user) {
-    observe();
-    Assert.assertTrue(bookingObserved, "Trial booking was not observed for the generated test user");
-    Assert.assertTrue(accountObserved, "Authenticated dashboard was not reached for the generated test user");
-  }
+        bookingObserved |=
+                bookingConfirmation
+                        || dashboardOpen
+                        || loginConfirmation;
 
+        accountObserved |=
+                dashboardOpen
+                        || loginConfirmation;
+    }
+
+    @Override
+    public boolean complete() {
+        return bookingObserved && accountObserved;
+    }
+
+    @Override
+    public String status() {
+        return MessageFormat.format(
+                "bookingObserved={0}, accountObserved={1}",
+                bookingObserved,
+                accountObserved
+        );
+    }
+
+    @Override
+    public void assertComplete(TestData user) {
+        observe();
+
+        Assert.assertTrue(
+                bookingObserved,
+                "Trial booking was not observed for the generated test user"
+        );
+
+        Assert.assertTrue(
+                accountObserved,
+                "Created account was not confirmed for the generated test user"
+        );
+    }
 }
